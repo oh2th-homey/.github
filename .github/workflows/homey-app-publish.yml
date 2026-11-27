@@ -1,0 +1,46 @@
+# Reusable workflow: publish the calling Homey app to the Homey App Store.
+#
+# It uploads the app as it is in the caller's checkout (the version in app.json);
+# it does not bump the version. Submit the build for review in the Homey Developer Tools.
+#
+# Needs the HOMEY_PAT secret: a personal access token of the app's owner from
+# https://tools.developer.homey.app/me, set as an organization secret.
+#
+# Call it from an app repository with:
+#
+#   jobs:
+#     publish:
+#       uses: oh2th-homey/.github/.github/workflows/homey-app-publish.yml@main
+#       secrets: inherit
+
+name: Publish Homey App
+
+on:
+  workflow_call:
+    secrets:
+      HOMEY_PAT:
+        required: true
+    outputs:
+      url:
+        description: The Homey Developer Tools page for the published build
+        value: ${{ jobs.publish.outputs.url }}
+
+jobs:
+  publish:
+    name: Publish Homey App
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      url: ${{ steps.publish.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish
+        id: publish
+        uses: athombv/github-action-homey-app-publish@v1
+        with:
+          personal_access_token: ${{ secrets.HOMEY_PAT }}
+
+      - name: Summary
+        run: echo "Published. Submit the build for review at ${{ steps.publish.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
